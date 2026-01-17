@@ -1,46 +1,95 @@
-# When you use pkgs.callPackage, parameters here will be filled with packages from Nixpkgs (if there's a match)
-{ lib
-, stdenv
-, fetchFromGitHub
-, cmake
-, ...
-} @ args:
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  pkg-config,
+  meson,
+  python3,
+  ninja,
+  gusb,
+  pixman,
+  glib,
+  gobject-introspection,
+  cairo,
+  libgudev,
+  udevCheckHook,
+  gtk-doc,
+  docbook-xsl-nons,
+  docbook_xml_dtd_43,
+  openssl,
+}:
 
-stdenv.mkDerivation rec {
-  # Specify package name and version
-  pname = "liboqs";
-  version = "0.7.1";
+stdenv.mkDerivation (finalAttrs: {
+  pname = "libfprint";
+  version = "0.0.1";
+  outputs = [
+    "out"
+    "devdoc"
+  ];
 
-  # Download source code from GitHub
   src = fetchFromGitHub ({
-    owner = "open-quantum-safe";
-    repo = "liboqs";
+    owner = "xerootg";
+    repo = "libfprint";
     # Commit or tag, note that fetchFromGitHub cannot follow a branch!
-    rev = "0.7.1";
+    rev = "9f169dc";
     # Download git submodules, most packages don't need this
     fetchSubmodules = false;
     # Don't know how to calculate the SHA256 here? Comment it out and build the package
     # Nix will raise an error and show the correct hash
-    sha256 = "sha256-m20M4+3zsH40hTpMJG9cyIjXp0xcCUBS+cCiRVLXFqM=";
+    sha256 = "sha256-8VF3NcUdZ5XBi3l/uglEH6MxdDkapcd6wL8XrXALgEU=";
   });
 
-  # Parallel building, drastically speeds up packaging, enabled by default.
-  # You only want to turn this off for one of the rare packages that fails with this.
-  enableParallelBuilding = true;
-  # If you encounter some weird error when packaging CMake-based software, try enabling this
-  # This disables some automatic fixes applied to CMake-based software
-  dontFixCmake = true;
-
-  # Add CMake to the building environment, to generate Makefile with it
-  nativeBuildInputs = [ cmake ];
-
-  # Arguments to CMake that controls functionalities of liboqs
-  cmakeFlags = [
-    "-DBUILD_SHARED_LIBS=ON"
-    "-DOQS_BUILD_ONLY_LIB=1"
-    "-DOQS_USE_OPENSSL=OFF"
-    "-DOQS_DIST_BUILD=ON"
+  nativeBuildInputs = [
+    pkg-config
+    meson
+    ninja
+    gtk-doc
+    docbook-xsl-nons
+    docbook_xml_dtd_43
+    gobject-introspection
+    udevCheckHook
   ];
 
-  # stdenv.mkDerivation automatically does the rest for you
-}
+  buildInputs = [
+    gusb
+    pixman
+    glib
+    cairo
+    libgudev
+    openssl
+  ];
+
+  mesonFlags = [
+    "-Dudev_rules_dir=${placeholder "out"}/lib/udev/rules.d"
+    # Include virtual drivers for fprintd tests
+    # "-Ddrivers=all"
+    "-Dinstalled-tests=false"
+    "-Dudev_hwdb_dir=${placeholder "out"}/lib/udev/hwdb.d"
+  ];
+
+  # nativeInstallCheckInputs = [
+  #   (python3.withPackages (p: with p; [ pygobject3 ]))
+  # ];
+
+  # We need to run tests _after_ install so all the paths that get loaded are in
+  # the right place.
+  doCheck = false;
+
+  doInstallCheck = false;
+
+  installCheckPhase = ''
+    runHook preInstallCheck
+
+    ninjaCheckPhase
+
+    runHook postInstallCheck
+  '';
+
+  meta = {
+    homepage = "https://fprint.freedesktop.org/";
+    description = "Library designed to make it easy to add support for consumer fingerprint readers";
+    license = lib.licenses.lgpl21Only;
+    platforms = lib.platforms.linux;
+    maintainers = [ ];
+  };
+})
