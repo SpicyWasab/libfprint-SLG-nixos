@@ -62,8 +62,8 @@ stdenv.mkDerivation (finalAttrs: {
   mesonFlags = [
     "-Dudev_rules_dir=${placeholder "out"}/lib/udev/rules.d"
     # Include virtual drivers for fprintd tests
-    # "-Ddrivers=all"
-    "-Dinstalled-tests=false"
+    # "-Ddrivers=all" # doesn't build if I don't uncomment this
+    "-Dinstalled-tests=false" # doesn't work if I don't disable this. I guess it's due to this version not having proper tests or something like that
     "-Dudev_hwdb_dir=${placeholder "out"}/lib/udev/hwdb.d"
   ];
 
