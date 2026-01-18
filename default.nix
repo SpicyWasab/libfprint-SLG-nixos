@@ -14,7 +14,7 @@
   modules = import ./modules; # NixOS modules
   overlays = import ./overlays; # nixpkgs overlays
 
-  example-package = pkgs.callPackage ./pkgs/libfprint { };
+  libfprint = pkgs.callPackage ./pkgs/libfprint { };
   # libfprint-tod = pkgs.callPackage ./pkgs/libfprint-tod { };
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
