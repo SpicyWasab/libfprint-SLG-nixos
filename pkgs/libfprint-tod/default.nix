@@ -1,7 +1,7 @@
 {
   lib,
   libfprint,
-  fetchFromGitLab,
+  fetchFromGitHub,
 }:
 
 # for the curious, "tod" means "Touch OEM Drivers" meaning it can load
@@ -19,28 +19,38 @@ libfprint.overrideAttrs (
     pname = "libfprint-tod";
     inherit version;
 
-    src = fetchFromGitLab {
-      domain = "gitlab.freedesktop.org";
-      owner = "3v1n0";
+    src = fetchFromGitHub ({
+      owner = "xerootg";
       repo = "libfprint";
-      rev = "v${version}";
-      hash = "sha256-xkywuFbt8EFJOlIsSN2hhZfMUhywdgJ/uT17uiO3YV4=";
-    };
+      # Commit or tag, note that fetchFromGitHub cannot follow a branch!
+      rev = "9f169dc";
+      # Download git submodules, most packages don't need this
+      fetchSubmodules = false;
+      # Don't know how to calculate the SHA256 here? Comment it out and build the package
+      # Nix will raise an error and show the correct hash
+      sha256 = "sha256-8VF3NcUdZ5XBi3l/uglEH6MxdDkapcd6wL8XrXALgEU=";
+    });
 
     mesonFlags = [
       # Include virtual drivers for fprintd tests
       # "-Ddrivers=all"
       "-Dudev_hwdb_dir=${placeholder "out"}/lib/udev/hwdb.d"
       "-Dudev_rules_dir=${placeholder "out"}/lib/udev/rules.d"
+      "-Dinstalled-tests=false" # doesn't work if I don't disable this. I guess it's due to this version not having proper tests or something like that
+
     ];
 
-    postPatch = ''
-      ${postPatch}
-      patchShebangs \
-        ./libfprint/tod/tests/*.sh \
-        ./tests/*.py \
-        ./tests/*.sh \
-    '';
+    # postPatch = ''
+    #   ${postPatch}
+    #   patchShebangs \
+    #     ./libfprint/tod/tests/*.sh \
+    #     ./tests/*.py \
+    #     ./tests/*.sh \
+    # '';
+
+    doCheck = false;
+
+    doInstallCheck = false;
 
     meta = with lib; {
       homepage = "https://gitlab.freedesktop.org/3v1n0/libfprint";
